@@ -1,0 +1,67 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn-error.log
+
+# TypeScript source files (we only need compiled JS)
+*.ts
+!*.d.ts
+
+# Build files
+dist
+build
+.tsbuildinfo
+
+# Development files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Testing
+coverage
+.nyc_output
+*.test.js
+*.spec.js
+
+# Documentation
+*.md
+!README.md
+docs
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+azure-pipelines.yml
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp
+temp
+*.tmp
+
+# Azure specific
+.azure
+AZURE_AI_FOUNDRY_DEPLOYMENT.md
+DEPLOYMENT_GUIDE.md
+REFACTORING_SUMMARY.md
+TOOL_DEFINITIONS_GUIDE.md

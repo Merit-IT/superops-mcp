@@ -1,0 +1,68 @@
+name: Deploy SuperOps MCP
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Everything
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURECREDENTIALS }}
+
+      - name: Deploy Infrastructure
+        id: infra
+        run: |
+          az deployment sub create \
+            --name "superops-mcp-$(date +%Y%m%d-%H%M%S)" \
+            --location eastus \
+            --template-file infra/main.bicep \
+            --parameters \
+              superopsApiKey='${{ secrets.SUPEROPSAPIKEY }}' \
+              superopsSubdomain='${{ secrets.SUPEROPSSUBDOMAIN }}' \
+              oauthClientId='${{ secrets.OAUTHCLIENTID }}' \
+              entraClientSecret='${{ secrets.ENTRACLIENTSECRET }}'
+
+      - name: Get Deployment Outputs
+        id: outputs
+        run: |
+          LATEST=$(az deployment sub list \
+            --query "[?contains(name, 'superops-mcp')].name" -o tsv | sort -r | head -n 1)
+
+          RG=$(az deployment sub show --name $LATEST \
+            --query 'properties.outputs.resourceGroupName.value' -o tsv)
+          ACR=$(az deployment sub show --name $LATEST \
+            --query 'properties.outputs.containerRegistryName.value' -o tsv)
+          URL=$(az deployment sub show --name $LATEST \
+            --query 'properties.outputs.apiGatewayUrl.value' -o tsv)
+          APIM=$(az deployment sub show --name $LATEST \
+            --query 'properties.outputs.apiManagementName.value' -o tsv)
+
+          
+
+      - name: Build and Push Docker Image
+        run: |
+          az acr login --name ${{ steps.outputs.outputs.acr }}
+
+          docker build -t ${{ steps.outputs.outputs.acr }}.azurecr.io/superops-mcp:latest .
+          docker push ${{ steps.outputs.outputs.acr }}.azurecr.io/superops-mcp:latest
+
+      - name: Update Container App
+        run: |
+          APP=$(az containerapp list \
+            -g ${{ steps.outputs.outputs.rg }} \
+            --query "[0].name" -o tsv)
+
+          az containerapp update \
+            --name $APP \
+            --resource-group ${{ steps.outputs.outputs.rg }} \
+            --image ${{ steps.outputs.outputs.acr }}.azurecr.io/superops-mcp:latest
