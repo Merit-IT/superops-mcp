@@ -47,7 +47,11 @@ jobs:
           APIM=$(az deployment sub show --name $LATEST \
             --query 'properties.outputs.apiManagementName.value' -o tsv)
 
-          
+          echo "rg=$RG"     >> $GITHUB_OUTPUT
+          echo "acr=$ACR"   >> $GITHUB_OUTPUT
+          echo "url=$URL"   >> $GITHUB_OUTPUT
+          echo "apim=$APIM" >> $GITHUB_OUTPUT
+
 
       - name: Build and Push Docker Image
         run: |
